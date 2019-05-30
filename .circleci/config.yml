@@ -133,10 +133,13 @@ orbs:
               ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
               wiki-folder-path: << parameters.wiki-folder-path >>
 
-worflows:
+workflows:
   deploy-wiki:
     jobs:
       - github-wiki/build-and-push:
           commit-user-name: circleCI
           commit-user-email: circleci+orb-github-wiki@thecybermonk.com
           ssh-key-fingerprint: 8a:eb:2e:06:ba:62:78:16:83:22:13:01:6e:ce:8f:8b
+          filters:
+            branches:
+              only: master
