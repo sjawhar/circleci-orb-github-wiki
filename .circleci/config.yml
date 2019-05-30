@@ -1,26 +1,19 @@
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.2.0
-
-jobs:
-  wiki-push:
-    docker:
-      - image: circleci/node
-    steps:
-      - github-wiki/push-wiki-repo:
-          ssh-key-fingerprint: 8a:eb:2e:06:ba:62:78:16:83:22:13:01:6e:ce:8f:8b
+  github-wiki: sjawhar/github-wiki@0.2.1
 
 workflows:
   deploy-wiki:
     jobs:
       - github-wiki/build-and-push:
-          name: wiki-commit
-          commit-user-email: circleci+orb-github-wiki@thecybermonk.com
           push-wiki-repo: false
-      - wiki-push:
-          requires:
-            - wiki-commit
+          filters:
+            branches:
+              ignore: master
+      - github-wiki/build-and-push:
+          commit-user-email: circleci+orb-github-wiki@thecybermonk.com
+          ssh-key-fingerprint: 8a:eb:2e:06:ba:62:78:16:83:22:13:01:6e:ce:8f:8b
           filters:
             branches:
               only: master

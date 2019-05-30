@@ -75,6 +75,7 @@ commands:
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
+        default: circleci@wiki
       wiki-folder-path:
         type: string
         description: Path to directory containing wiki files
@@ -124,6 +125,7 @@ jobs:
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
+        default: circleci@wiki
       push-wiki-repo:
         type: boolean
         description: Push to wiki repo after commit

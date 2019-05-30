@@ -16,7 +16,7 @@ Populate sidebar files with page header links, commit to wiki repo, and push.
 
 **Parameters**
 * `commit-user-name`: User name with which wiki changes should be commited. Default: `CircleCI`
-* `commit-user-email`: User email with which wiki changes should be commited
+* `commit-user-email`: User email with which wiki changes should be commited. Default: `circleci@wiki`
 * `push-wiki-repo`: Push to wiki repo after commit. Default: `true`
 * `sidebar-placeholder`: String in sidebar files to replace with page header links. Default: `{{SIDEBAR_POPULATE}}`
 * `ssh-key-fingerprint`: Fingerprint of the SSH key with push access to your repo.
@@ -51,14 +51,14 @@ Push to wiki repo
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.2.0
+  github-wiki: sjawhar/github-wiki@0.2.1
 
 workflows:
   deploy-wiki:
     jobs:
       - github-wiki/build-and-push:
           commit-user-email: circleci+orb-github-wiki@thecybermonk.com
-          ssh-key-fingerprint: YOUR_SSH_FINGERPRINT_HERE
+          ssh-key-fingerprint: YOUR_SSH_JEY_FINGERPRINT_HERE
           filters:
             branches:
               only: master
@@ -69,26 +69,19 @@ workflows:
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.2.0
-
-jobs:
-  wiki-push:
-    docker:
-      - image: circleci/node
-    steps:
-      - github-wiki/push-wiki-repo:
-          ssh-key-fingerprint: YOUR_SSH_FINGERPRINT_HERE
+  github-wiki: sjawhar/github-wiki@0.2.1
 
 workflows:
   deploy-wiki:
     jobs:
       - github-wiki/build-and-push:
-          name: wiki-commit
-          commit-user-email: circleci+orb-github-wiki@thecybermonk.com
           push-wiki-repo: false
-      - wiki-push:
-          requires:
-            - wiki-commit
+          filters:
+            branches:
+              ignore: master
+      - github-wiki/build-and-push:
+          commit-user-email: circleci+orb-github-wiki@thecybermonk.com
+          ssh-key-fingerprint: YOUR_SSH_KEY_FINGERPRINT_HERE
           filters:
             branches:
               only: master
