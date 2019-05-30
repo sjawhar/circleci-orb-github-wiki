@@ -1,0 +1,142 @@
+version: 2.1
+
+orbs:
+  github-wiki:
+    executors:
+      default:
+        description: Single Docker container with bash
+        docker:
+          - image: circleci/node
+
+    commands:
+      populate-sidebars:
+        description: Populate sidebar files with page header links
+        executor: default
+        parameters:
+          sidebar-placeholder:
+            type: string
+            description: String in sidebar files to replace with page header links
+            default: '{{SIDEBAR_POPULATE}}'
+          wiki-folder-path:
+            type: string
+            description: Path to directory containing wiki files
+            default: docs
+        steps:
+          - run: |
+              #!/bin/bash
+              set -euf -o pipefail
+
+              SIDEBAR_FILE="__Sidebar.md"
+              GENERATE_MATCH="<< parameters.sidebar-placeholder >>"
+
+              cd << parameters.wiki-folder-path >>
+              for SIDEBAR_PATH in $(find . \
+                -type f -name "${SIDEBAR_FILE}" \
+                -exec grep -l "${GENERATE_MATCH}" {} \;
+              )
+              do
+                SIDEBAR_DIR="$(dirname ${SIDEBAR_PATH})"
+                pushd "${SIDEBAR_DIR}"
+
+                if [ "${SIDEBAR_DIR}" == "." ]
+                then
+                  MARKDOWN_FILE=Home.md
+                else
+                  MARKDOWN_FILE="`basename ${SIDEBAR_DIR}`.md"
+                fi
+
+                grep -oP '(?<=^#)#+ .*$' "${MARKDOWN_FILE}" | awk '{
+                  original_len = length($0)
+                  sub(/^#+ /,"")
+                  indent = sprintf("%"(original_len - length($0) - 1)"s","")
+                  gsub(" ", "\\&nbsp;\\&nbsp;", indent)
+                  gsub(" ", "", indent)
+                  link = tolower($0)
+                  gsub(/[^a-zA-Z0-9 _-]/, "", link)
+                  gsub(" ", "-", link)
+                  entry = indent "["$0"](#"link")  "
+                  print entry
+                }' > replace.txt
+
+                sed -i 's/'"${GENERATE_MATCH}"'/cat replace.txt/e' "${SIDEBAR_FILE}"
+                rm replace.txt
+
+                popd
+              done
+
+      push-to-wiki-repo:
+        description: Copy files to wiki repo and push
+        executor: default
+        parameters:
+          commit-user-name:
+            type: string
+            description: User name with which wiki changes should be commited
+          commit-user-email:
+            type: string
+            description: User email with which wiki changes should be commited
+          ssh-key-fingerprint:
+            type: string
+            description: Fingerprint of SSH key with push access to your repo
+          wiki-folder-path:
+            type: string
+            description: Path to directory containing wiki files
+            default: docs
+        steps:
+          - add_ssh_keys:
+              fingerprints:
+                - << parameters.ssh-key-fingerprint >>
+          - run:
+              name: Clone wiki
+              command: git clone ${CIRCLE_REPOSITORY_URL/\.git/.wiki.git} /tmp/wiki
+          - run:
+              name: Commit changes
+              command: |
+                cd << parameters.wiki-folder-path >>
+                export COMMIT_MESSAGE="$(git log --format=%B -n 1 ${CIRCLE_SHA1})"
+                cp -r /tmp/wiki/.git ./
+                git config user.email "<< parameters.commit-user-email >>"
+                git config user.name "<< parameters.commit-user-name >>"
+                git add .
+                git commit -m "${COMMIT_MESSAGE}" || changes=none
+                git push
+
+    jobs:
+      build-and-push:
+        description: Populate sidebar files with page header links and push to wiki repo
+        executor: default
+        parameters:
+          commit-user-name:
+            type: string
+            description: User name with which wiki changes should be commited
+          commit-user-email:
+            type: string
+            description: User email with which wiki changes should be commited
+          sidebar-placeholder:
+            type: string
+            description: String in sidebar files to replace with page header links
+            default: '{{SIDEBAR_POPULATE}}'
+          ssh-key-fingerprint:
+            type: string
+            description: Fingerprint of SSH key with push access to your repo
+          wiki-folder-path:
+            type: string
+            description: Path to directory containing wiki files
+            default: docs
+        steps:
+          - checkout
+          - populate-sidebars:
+              sidebar-placeholder: << parameters.sidebar-placeholder >>
+              wiki-folder-path: << parameters.wiki-folder-path >>
+          - push-to-wiki-repo:
+              commit-user-name: << parameters.commit-user-name >>
+              commit-user-email: << parameters.commit-user-email >>
+              ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
+              wiki-folder-path: << parameters.wiki-folder-path >>
+
+worflows:
+  deploy-wiki:
+    jobs:
+      - github-wiki/build-and-push:
+          commit-user-name: circleCI
+          commit-user-email: circleci+orb-github-wiki@thecybermonk.com
+          ssh-key-fingerprint: 8a:eb:2e:06:ba:62:78:16:83:22:13:01:6e:ce:8f:8b
