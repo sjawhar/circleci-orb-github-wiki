@@ -15,6 +15,10 @@ commands:
         type: string
         description: String in sidebar files to replace with page header links
         default: '{{SIDEBAR_POPULATE}}'
+      wiki-folder-path:
+        type: string
+        description: Path to directory containing wiki files
+        default: docs
     steps:
       - run:
           name: Populate sidebars
@@ -24,6 +28,8 @@ commands:
 
             SIDEBAR_FILE="__Sidebar.md"
             GENERATE_MATCH="<< parameters.sidebar-placeholder >>"
+
+            cd << parameters.wiki-folder-path >>
 
             for SIDEBAR_PATH in $(find . \
               -type f -name "${SIDEBAR_FILE}" \
@@ -77,6 +83,10 @@ commands:
         type: env_var_name
         description: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo
         default: GITHUB_WIKI_SSH
+      wiki-folder-path:
+        type: string
+        description: Path to directory containing wiki files
+        default: docs
     steps:
       - run:
           name: Clone wiki
@@ -85,6 +95,7 @@ commands:
           name: Commit changes
           command: |
             export COMMIT_MESSAGE="$(git log --format=%B -n 1 ${CIRCLE_SHA1})"
+            cd << parameters.wiki-folder-path >>
             cp -r /tmp/wiki/.git ./
             git config user.email "<< parameters.commit-user-email >>"
             git config user.name "<< parameters.commit-user-name >>"
@@ -98,7 +109,7 @@ commands:
           steps:
             - run:
                 name: Push to wiki repo
-                command: git push
+                command: cd << parameters.wiki-folder-path >> && git push
 
 jobs:
   build-and-push:
@@ -128,13 +139,14 @@ jobs:
         type: string
         description: Path to directory containing wiki files
         default: docs
-    working_directory: << parameters.wiki-folder-path >>
     steps:
       - checkout
       - populate-sidebars:
           sidebar-placeholder: << parameters.sidebar-placeholder >>
+          wiki-folder-path: << parameters.wiki-folder-path >>
       - push-to-wiki-repo:
           commit-user-name: << parameters.commit-user-name >>
           commit-user-email: << parameters.commit-user-email >>
           dry-run: << parameters.dry-run >>
           ssh-key-env-var-name: << parameters.ssh-key-env-var-name >>
+          wiki-folder-path: << parameters.wiki-folder-path >>
