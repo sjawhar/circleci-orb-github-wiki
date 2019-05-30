@@ -11,7 +11,6 @@ orbs:
     commands:
       populate-sidebars:
         description: Populate sidebar files with page header links
-        executor: default
         parameters:
           sidebar-placeholder:
             type: string
@@ -66,7 +65,6 @@ orbs:
 
       push-to-wiki-repo:
         description: Copy files to wiki repo and push
-        executor: default
         parameters:
           commit-user-name:
             type: string
