@@ -1,12 +1,12 @@
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@dev:0.2.0
+  github-wiki: sjawhar/github-wiki@0.2.0
 
 jobs:
   wiki-push:
     docker:
-      - image: circleci:node
+      - image: circleci/node
     steps:
       - github-wiki/push-wiki-repo:
           ssh-key-fingerprint: 8a:eb:2e:06:ba:62:78:16:83:22:13:01:6e:ce:8f:8b

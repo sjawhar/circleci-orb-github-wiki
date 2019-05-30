@@ -74,7 +74,7 @@ orbs:
 jobs:
   wiki-push:
     docker:
-      - image: circleci:node
+      - image: circleci/node
     steps:
       - github-wiki/push-wiki-repo:
           ssh-key-fingerprint: YOUR_SSH_FINGERPRINT_HERE
