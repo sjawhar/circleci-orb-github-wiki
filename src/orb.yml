@@ -65,8 +65,8 @@ commands:
               popd
             done
 
-  push-to-wiki-repo:
-    description: Copy files to wiki repo and push
+  commit-wiki-repo:
+    description: Copy files to wiki repo and commit
     parameters:
       commit-user-name:
         type: string
@@ -75,14 +75,6 @@ commands:
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
-      dry-run:
-        type: boolean
-        description: Commit changes to wiki repo, but don't push
-        default: false
-      ssh-key-env-var-name:
-        type: env_var_name
-        description: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo
-        default: GITHUB_WIKI_SSH
       wiki-folder-path:
         type: string
         description: Path to directory containing wiki files
@@ -101,19 +93,28 @@ commands:
             git config user.name "<< parameters.commit-user-name >>"
             git add .
             git commit -m "${COMMIT_MESSAGE}" || changes=none
+
+  push-wiki-repo:
+    description: Push changes to wiki repo
+    parameters:
+      ssh-key-fingerprint:
+        type: string
+        description: Fingerprint of the SSH key with push access to your repo
+      wiki-folder-path:
+        type: string
+        description: Path to directory containing wiki files
+        default: docs
+    steps:
       - add_ssh_keys:
           fingerprints:
-            - $<< parameters.ssh-key-env-var-name >>
-      - unless:
-          condition: << parameters.dry-run >>
-          steps:
-            - run:
-                name: Push to wiki repo
-                command: cd << parameters.wiki-folder-path >> && git push
+            - << parameters.ssh-key-fingerprint >>
+      - run:
+          name: Push to wiki repo
+          command: cd << parameters.wiki-folder-path >> && git push
 
 jobs:
   build-and-push:
-    description: Populate sidebar files with page header links and push to wiki repo
+    description: Populate sidebar files with page header links, commit to wiki repo, and push
     executor: default
     parameters:
       commit-user-name:
@@ -123,18 +124,18 @@ jobs:
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
-      dry-run:
+      push-wiki-repo:
         type: boolean
-        description: Populate sidebars and commit, but don't push
-        default: false
+        description: Push to wiki repo after commit
+        default: true
       sidebar-placeholder:
         type: string
         description: String in sidebar files to replace with page header links
         default: '{{SIDEBAR_POPULATE}}'
-      ssh-key-env-var-name:
-        type: env_var_name
-        description: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo
-        default: GITHUB_WIKI_SSH
+      ssh-key-fingerprint:
+        type: string
+        description: Fingerprint of the SSH key with push access to your repo
+        default: ''
       wiki-folder-path:
         type: string
         description: Path to directory containing wiki files
@@ -144,9 +145,13 @@ jobs:
       - populate-sidebars:
           sidebar-placeholder: << parameters.sidebar-placeholder >>
           wiki-folder-path: << parameters.wiki-folder-path >>
-      - push-to-wiki-repo:
+      - commit-wiki-repo:
           commit-user-name: << parameters.commit-user-name >>
           commit-user-email: << parameters.commit-user-email >>
-          dry-run: << parameters.dry-run >>
-          ssh-key-env-var-name: << parameters.ssh-key-env-var-name >>
           wiki-folder-path: << parameters.wiki-folder-path >>
+      - when:
+          condition: << parameters.push-wiki-repo >>
+          steps:
+            - push-wiki-repo:
+                ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
+                wiki-folder-path: << parameters.wiki-folder-path >>

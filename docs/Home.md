@@ -6,14 +6,14 @@ What? You didn't know that the wiki tab was controlled by a git repo? Well, it's
 
 ## Jobs
 ### build-and-push
-Populate sidebar files with page header links and push to wiki repo.
+Populate sidebar files with page header links, commit to wiki repo, and push.
 
 **Parameters**
 * `commit-user-name`: User name with which wiki changes should be commited. Default: `CircleCI`
 * `commit-user-email`: User email with which wiki changes should be commited
-* `dry-run`: Populate sidebars and commit to wiki repo, but don't push. Default: `false`
+* `push-wiki-repo`: Push to wiki repo after commit. Default: `true`
 * `sidebar-placeholder`: String in sidebar files to replace with page header links. Default: `{{SIDEBAR_POPULATE}}`
-* `ssh-key-env-var-name`: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo. Default: `GITHUB_WIKI_SSH`
+* `ssh-key-fingerprint`: Fingerprint of the SSH key with push access to your repo.
 * `wiki-folder-path`: Path to directory containing wiki files. Default: `docs`
 
 ## Commands
@@ -24,14 +24,19 @@ Populate sidebar files with page header links.
 * `sidebar-placeholder`
 * `wiki-folder-path`
 
-### push-to-wiki-repo
-Copy files to wiki repo and push.
+### commit-wiki-repo
+Copy files to wiki repo and commit.
 
 **Parameters**
 * `commit-user-name`
 * `commit-user-email`
-* `dry-run`
-* `ssh-key-env-var-name`
+* `wiki-folder-path`
+
+### push-wiki-repo
+Push to wiki repo
+
+**Parameters**
+* `ssh-key-fingerprint`
 * `wiki-folder-path`
 
 ## Example
@@ -39,13 +44,26 @@ Copy files to wiki repo and push.
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.1.2
+  github-wiki: sjawhar/github-wiki@dev:0.2.0
+
+jobs:
+  wiki-push:
+    docker:
+      - image: circleci:node
+    steps:
+      - github-wiki/push-wiki-repo:
+          ssh-key-fingerprint: YOUR_SSH_FINGERPRINT_HERE
 
 workflows:
   deploy-wiki:
     jobs:
       - github-wiki/build-and-push:
+          name: wiki-commit
           commit-user-email: circleci+orb-github-wiki@thecybermonk.com
+          push-wiki-repo: false
+      - wiki-push:
+          requires:
+            - wiki-commit
           filters:
             branches:
               only: master
