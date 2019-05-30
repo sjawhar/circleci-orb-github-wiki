@@ -1,8 +1,9 @@
 ## Purpose
-
-This CircleCI orb automates the building and deployment of documentation to the wiki repo available every GitHub repository.
+The `sjawhar/github-wiki` orb automates the building and deployment of documentation to the wiki repo available every GitHub repository.
 
 What? You didn't know that the wiki tab was controlled by a git repo? Well, it's true! And this orb will help you make the most of it.
+
+One cool feature is the ability to automatically populate your sidebar files with links to page headers. See the sidebar on the side of this page? That was generated using this orb! Just pop a placeholder string (default is `{{SIDEBAR_POPULATE}}`) into your `__Sidebar.md` files and let'er rip. Check out the [docs folder](../tree/master/docs) of this repo to see more.
 
 ## Setup
 1. Go to the wiki tab of you GitHub repo and create the first page. Content doesn't matter.
