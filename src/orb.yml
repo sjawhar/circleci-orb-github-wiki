@@ -15,10 +15,6 @@ commands:
         type: string
         description: String in sidebar files to replace with page header links
         default: '{{SIDEBAR_POPULATE}}'
-      wiki-folder-path:
-        type: string
-        description: Path to directory containing wiki files
-        default: docs
     steps:
       - run:
           name: Populate sidebars
@@ -29,7 +25,6 @@ commands:
             SIDEBAR_FILE="__Sidebar.md"
             GENERATE_MATCH="<< parameters.sidebar-placeholder >>"
 
-            cd << parameters.wiki-folder-path >>
             for SIDEBAR_PATH in $(find . \
               -type f -name "${SIDEBAR_FILE}" \
               -exec grep -l "${GENERATE_MATCH}" {} \;
@@ -70,34 +65,40 @@ commands:
       commit-user-name:
         type: string
         description: User name with which wiki changes should be commited
+        default: CircleCI
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
-      ssh-key-fingerprint:
-        type: string
-        description: Fingerprint of SSH key with push access to your repo
-      wiki-folder-path:
-        type: string
-        description: Path to directory containing wiki files
-        default: docs
+      dry-run:
+        type: boolean
+        description: Commit changes to wiki repo, but don't push
+        default: false
+      ssh-key-env-var-name:
+        type: env_var_name
+        description: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo
+        default: GITHUB_WIKI_SSH
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - << parameters.ssh-key-fingerprint >>
       - run:
           name: Clone wiki
           command: git clone ${CIRCLE_REPOSITORY_URL/\.git/.wiki.git} /tmp/wiki
       - run:
           name: Commit changes
           command: |
-            cd << parameters.wiki-folder-path >>
             export COMMIT_MESSAGE="$(git log --format=%B -n 1 ${CIRCLE_SHA1})"
             cp -r /tmp/wiki/.git ./
             git config user.email "<< parameters.commit-user-email >>"
             git config user.name "<< parameters.commit-user-name >>"
             git add .
             git commit -m "${COMMIT_MESSAGE}" || changes=none
-            git push
+      - add_ssh_keys:
+          fingerprints:
+            - $<< parameters.ssh-key-env-var-name >>
+      - unless:
+          condition: << parameters.dry-run >>
+          steps:
+            - run:
+                name: Push to wiki repo
+                command: git push
 
 jobs:
   build-and-push:
@@ -107,27 +108,33 @@ jobs:
       commit-user-name:
         type: string
         description: User name with which wiki changes should be commited
+        default: CircleCI
       commit-user-email:
         type: string
         description: User email with which wiki changes should be commited
+      dry-run:
+        type: boolean
+        description: Populate sidebars and commit, but don't push
+        default: false
       sidebar-placeholder:
         type: string
         description: String in sidebar files to replace with page header links
         default: '{{SIDEBAR_POPULATE}}'
-      ssh-key-fingerprint:
-        type: string
-        description: Fingerprint of SSH key with push access to your repo
+      ssh-key-env-var-name:
+        type: env_var_name
+        description: Name of the environment variable containing the fingerprint of the SSH key with push access to your repo
+        default: GITHUB_WIKI_SSH
       wiki-folder-path:
         type: string
         description: Path to directory containing wiki files
         default: docs
+    working_directory: << parameters.wiki-folder-path >>
     steps:
       - checkout
       - populate-sidebars:
           sidebar-placeholder: << parameters.sidebar-placeholder >>
-          wiki-folder-path: << parameters.wiki-folder-path >>
       - push-to-wiki-repo:
           commit-user-name: << parameters.commit-user-name >>
           commit-user-email: << parameters.commit-user-email >>
-          ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
-          wiki-folder-path: << parameters.wiki-folder-path >>
+          dry-run: << parameters.dry-run >>
+          ssh-key-env-var-name: << parameters.ssh-key-env-var-name >>
