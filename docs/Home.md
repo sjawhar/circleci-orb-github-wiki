@@ -47,7 +47,7 @@ Copy files to wiki repo and commit.
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.2.1
+  github-wiki: sjawhar/github-wiki@0.3.0
 
 workflows:
   deploy-wiki:
@@ -65,7 +65,7 @@ workflows:
 version: 2.1
 
 orbs:
-  github-wiki: sjawhar/github-wiki@0.2.1
+  github-wiki: sjawhar/github-wiki@0.3.0
 
 workflows:
   deploy-wiki:
