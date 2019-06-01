@@ -12,13 +12,13 @@ One cool feature is the ability to automatically populate your sidebar files wit
 4. Add the `sjawhar/github-wiki` orb to your CircleCI config.yml. See the examples below.
 
 ## Jobs
-### build-and-push
-Populate sidebar files with page header links, commit to wiki repo, and push.
+### build-and-deploy
+Populate sidebar files with page header links, commit to wiki repo, and deploy.
 
 **Parameters**
 * `commit-user-name`: User name with which wiki changes should be commited. Default: `CircleCI`
 * `commit-user-email`: User email with which wiki changes should be commited. Default: `circleci@wiki`
-* `push-wiki-repo`: Push to wiki repo after commit. Default: `true`
+* `deploy-branch-filter`: Only push to wiki repo on this branch. Default: empty (all branches)
 * `sidebar-placeholder`: String in sidebar files to replace with page header links. Default: `{{SIDEBAR_POPULATE}}`
 * `ssh-key-fingerprint`: Fingerprint of the SSH key with push access to your repo.
 * `wiki-folder-path`: Path to directory containing wiki files. Default: `docs`
@@ -31,23 +31,18 @@ Populate sidebar files with page header links.
 * `sidebar-placeholder`
 * `wiki-folder-path`
 
-### commit-wiki-repo
+### deploy-wiki-repo
 Copy files to wiki repo and commit.
 
 **Parameters**
 * `commit-user-name`
 * `commit-user-email`
-* `wiki-folder-path`
-
-### push-wiki-repo
-Push to wiki repo
-
-**Parameters**
+* `deploy-branch-filter`
 * `ssh-key-fingerprint`
 * `wiki-folder-path`
 
 ## Examples
-### Build and push on master
+### Build and deploy on master
 ```yaml
 version: 2.1
 
@@ -57,7 +52,7 @@ orbs:
 workflows:
   deploy-wiki:
     jobs:
-      - github-wiki/build-and-push:
+      - github-wiki/build-and-deploy:
           commit-user-email: circleci+orb-github-wiki@thecybermonk.com
           ssh-key-fingerprint: YOUR_SSH_JEY_FINGERPRINT_HERE
           filters:
@@ -65,7 +60,7 @@ workflows:
               only: master
 ```
 
-### Build on branches, push on master
+### Build on branches, deploy on master
 ```yaml
 version: 2.1
 
@@ -75,15 +70,8 @@ orbs:
 workflows:
   deploy-wiki:
     jobs:
-      - github-wiki/build-and-push:
-          push-wiki-repo: false
-          filters:
-            branches:
-              ignore: master
-      - github-wiki/build-and-push:
+      - github-wiki/build-and-deploy:
           commit-user-email: circleci+orb-github-wiki@thecybermonk.com
           ssh-key-fingerprint: YOUR_SSH_KEY_FINGERPRINT_HERE
-          filters:
-            branches:
-              only: master
+          deploy-branch-filter: master
 ```
