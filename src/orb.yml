@@ -108,8 +108,6 @@ commands:
           name: Push to wiki repo
           command: |
             branch_filter="<< parameters.deploy-branch-filter >>"
-            echo "${CIRCLE_BRANCH}"
-            echo "${branch_filter}"
             if [ -n "${branch_filter}" ] && [ "${CIRCLE_BRANCH}" != "${branch_filter}" ]
             then
               echo "Branch ${CIRCLE_BRANCH} not master. Exiting."
