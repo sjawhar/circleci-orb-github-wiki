@@ -18,7 +18,7 @@ Populate sidebar files with page header links, commit to wiki repo, and deploy.
 **Parameters**
 * `commit-user-name`: User name with which wiki changes should be commited. Default: `CircleCI`
 * `commit-user-email`: User email with which wiki changes should be commited. Default: `circleci@wiki`
-* `deploy-branch-filter`: Only push to wiki repo on this branch. Default: all branches
+* `deploy-branch-filter`: Only push to wiki repo on this branch. Default: empty (all branches)
 * `sidebar-placeholder`: String in sidebar files to replace with page header links. Default: `{{SIDEBAR_POPULATE}}`
 * `ssh-key-fingerprint`: Fingerprint of the SSH key with push access to your repo.
 * `wiki-folder-path`: Path to directory containing wiki files. Default: `docs`

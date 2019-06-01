@@ -5,7 +5,7 @@ executors:
   default:
     description: Single Docker container with bash
     docker:
-      - image: alpine:3.8
+      - image: circleci/node
 
 commands:
   populate-sidebars:
@@ -20,9 +20,6 @@ commands:
         description: Path to directory containing wiki files
         default: docs
     steps:
-      - run:
-          name: Install dependencies
-          command: apk add sed
       - run:
           name: Populate sidebars
           command: |
@@ -92,9 +89,6 @@ commands:
         default: docs
     steps:
       - run:
-          name: Install dependencies
-          command: apk add git
-      - run:
           name: Clone wiki
           command: git clone ${CIRCLE_REPOSITORY_URL/\.git/.wiki.git} /tmp/wiki
       - run:
@@ -114,6 +108,8 @@ commands:
           name: Push to wiki repo
           command: |
             branch_filter="<< parameters.deploy-branch-filter >>"
+            echo "${CIRCLE_BRANCH}"
+            echo "${branch_filter}"
             if [ -n "${branch_filter}" ] && [ "${CIRCLE_BRANCH}" != "${branch_filter}" ]
             then
               echo "Branch ${CIRCLE_BRANCH} not master. Exiting."
