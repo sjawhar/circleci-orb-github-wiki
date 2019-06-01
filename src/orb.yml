@@ -65,8 +65,8 @@ commands:
               popd
             done
 
-  commit-wiki-repo:
-    description: Copy files to wiki repo and commit
+  deploy-wiki-repo:
+    description: Copy files to wiki repo and deploy
     parameters:
       commit-user-name:
         type: string
@@ -76,6 +76,13 @@ commands:
         type: string
         description: User email with which wiki changes should be commited
         default: circleci@wiki
+      deploy-branch-filter:
+        type: string
+        description: Only push changes to the wiki on this branch
+        default: ''
+      ssh-key-fingerprint:
+        type: string
+        description: Fingerprint of the SSH key with push access to your repo
       wiki-folder-path:
         type: string
         description: Path to directory containing wiki files
@@ -94,27 +101,23 @@ commands:
             git config user.name "<< parameters.commit-user-name >>"
             git add .
             git commit -m "${COMMIT_MESSAGE}" || changes=none
-
-  push-wiki-repo:
-    description: Push changes to wiki repo
-    parameters:
-      ssh-key-fingerprint:
-        type: string
-        description: Fingerprint of the SSH key with push access to your repo
-      wiki-folder-path:
-        type: string
-        description: Path to directory containing wiki files
-        default: docs
-    steps:
       - add_ssh_keys:
           fingerprints:
             - << parameters.ssh-key-fingerprint >>
       - run:
           name: Push to wiki repo
-          command: cd << parameters.wiki-folder-path >> && git push
+          command: |
+            branch_filter="<< parameters.deploy-branch-filter >>"
+            if [ -n "${branch_filter}" ] && [ "${CIRCLE_BRANCH}" != "${branch_filter}"]
+            then
+              echo "Branch ${CIRCLE_BRANCH} not master. Exiting."
+              exit 0
+            fi
+
+            cd << parameters.wiki-folder-path >> && git push
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     description: Populate sidebar files with page header links, commit to wiki repo, and push
     executor: default
     parameters:
@@ -126,10 +129,10 @@ jobs:
         type: string
         description: User email with which wiki changes should be commited
         default: circleci@wiki
-      push-wiki-repo:
-        type: boolean
-        description: Push to wiki repo after commit
-        default: true
+      deploy-branch-filter:
+        type: string
+        description: Only push changes to the wiki on this branch
+        default: ''
       sidebar-placeholder:
         type: string
         description: String in sidebar files to replace with page header links
@@ -147,13 +150,9 @@ jobs:
       - populate-sidebars:
           sidebar-placeholder: << parameters.sidebar-placeholder >>
           wiki-folder-path: << parameters.wiki-folder-path >>
-      - commit-wiki-repo:
+      - deploy-wiki-repo:
           commit-user-name: << parameters.commit-user-name >>
           commit-user-email: << parameters.commit-user-email >>
+          deploy-branch-filter: << parameters.deploy-branch-filter >>
+          ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
           wiki-folder-path: << parameters.wiki-folder-path >>
-      - when:
-          condition: << parameters.push-wiki-repo >>
-          steps:
-            - push-wiki-repo:
-                ssh-key-fingerprint: << parameters.ssh-key-fingerprint >>
-                wiki-folder-path: << parameters.wiki-folder-path >>
